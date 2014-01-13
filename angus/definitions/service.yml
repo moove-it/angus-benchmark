@@ -1,0 +1,3 @@
+service:   'Angus-benchmark'
+code_name: 'angus-benchmark'
+version:   '0.1'

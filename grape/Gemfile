@@ -1,0 +1,14 @@
+source 'http://rubygems.org'
+
+gem 'rake'
+
+gem 'grape'
+gem 'grape-entity'
+
+platform :ruby do
+  gem 'thin'
+end
+
+platform :jruby do
+  gem 'mizuno'
+end

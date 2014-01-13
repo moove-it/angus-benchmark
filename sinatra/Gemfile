@@ -1,0 +1,13 @@
+source 'http://rubygems.org'
+
+gem 'rake'
+
+gem 'sinatra'
+
+platform :ruby do
+  gem 'thin'
+end
+
+platform :jruby do
+  gem 'mizuno'
+end

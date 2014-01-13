@@ -1,0 +1,12 @@
+get_users:
+  name: Get Users
+  description: >
+    Get Users
+  path: /users
+  method: get
+
+  response:
+    - element: users
+      description: Users
+      required: true
+      elements_type: user
