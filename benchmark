@@ -36,9 +36,9 @@ class BenchmarkSuite
 
   def start_server
     if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'jruby'
-      spawn("bundle exec mizuno -E production -p #{@port} #{@output_redirect}")
+      spawn("bundle exec mizuno -E production -p #@port #@output_redirect")
     else
-      spawn("bundle exec thin -e production -p #{@port} start #{@output_redirect}")
+      spawn("bundle exec thin -e production -p #@port start #@output_redirect")
     end
   end
 
@@ -52,15 +52,13 @@ class BenchmarkSuite
   end
 
   def stop_server
-    #puts 'Stopping Server...'
-
-    lines = %x(lsof -i tcp:#{@port}).lines.to_a
+    lines = %x(lsof -i tcp:#@port).lines.to_a
     while(lines.count > 1) do
       line = lines.last
       pid = line.split[1]
       Process.kill('KILL', pid.to_i)
 
-      lines = %x(lsof -i tcp:#{@port}).lines.to_a
+      lines = %x(lsof -i tcp:#@port).lines.to_a
     end
   end
 
@@ -68,14 +66,14 @@ class BenchmarkSuite
     @progressbar.log("Benchmarking: #{name}...")
 
     Dir.chdir(folder) do
-      system("bundle install #{@output_redirect}")
+      system("bundle install #@output_redirect")
       start_server
     end
 
     # Wait for the server to start.
-    wait_for_server("http://localhost:#{@port}/#{path}")
+    wait_for_server("http://localhost:#@port/#{path}")
 
-    system("ab -qn 1000 -c 100 -g #{folder}.dat 'http://localhost:#{@port}/#{path}' #{@output_redirect}")
+    system("ab -qn 1000 -c 100 -g #{folder}.dat 'http://localhost:#@port/#{path}' #@output_redirect")
 
     stop_server
   end
