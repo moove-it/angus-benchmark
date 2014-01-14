@@ -1,0 +1,11 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    ruby-progressbar (1.4.0)
+
+PLATFORMS
+  java
+  ruby
+
+DEPENDENCIES
+  ruby-progressbar

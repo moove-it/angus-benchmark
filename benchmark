@@ -1,0 +1,92 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+require 'open-uri'
+require 'ruby-progressbar'
+
+class BenchmarkSuite
+  def initialize(options = {})
+    @frameworks = [
+                   ['Angus', 'angus', 'angus-benchmark/api/0.1/users'],
+                   ['Sinatra', 'sinatra', 'users'],
+                   ['Rails Api', 'rails-api', 'users'],
+                   ['Grape', 'grape', 'v1/users']
+                 ]
+
+    @progressbar = ProgressBar.create(:total => @frameworks.size, :format => '%a %B %p%% %t')
+
+    @verbose = options[:verbose] || false
+    @port = options[:port] || 9291
+
+    @output_redirect = unless @verbose
+                         "> /dev/null 2>&1"
+                       end
+  end
+
+  def start
+    @frameworks.each do |framework_args|
+      benchmark(*framework_args)
+      @progressbar.increment
+    end
+
+    plot
+
+    clean
+  end
+
+  def start_server
+    if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'jruby'
+      spawn("bundle exec mizuno -E production -p #{@port} #{@output_redirect}")
+    else
+      spawn("bundle exec thin -e production -p #{@port} start #{@output_redirect}")
+    end
+  end
+
+  def wait_for_server(path)
+    loop do
+      begin
+        open(path)
+        break
+      rescue Errno::ECONNREFUSED; end
+    end
+  end
+
+  def stop_server
+    #puts 'Stopping Server...'
+
+    lines = %x(lsof -i tcp:#{@port}).lines.to_a
+    while(lines.count > 1) do
+      line = lines.last
+      pid = line.split[1]
+      Process.kill('KILL', pid.to_i)
+
+      lines = %x(lsof -i tcp:#{@port}).lines.to_a
+    end
+  end
+
+  def benchmark(name, folder, path)
+    @progressbar.log("Benchmarking: #{name}...")
+
+    Dir.chdir(folder) do
+      system("bundle install #{@output_redirect}")
+      start_server
+    end
+
+    # Wait for the server to start.
+    wait_for_server("http://localhost:#{@port}/#{path}")
+
+    system("ab -qn 1000 -c 100 -g #{folder}.dat 'http://localhost:#{@port}/#{path}' #{@output_redirect}")
+
+    stop_server
+  end
+
+  def clean
+    FileUtils.rm(%w(angus.dat sinatra.dat rails-api.dat grape.dat))
+  end
+
+  def plot
+    system('gnuplot benchmark.plot')
+  end
+end
+
+BenchmarkSuite.new.start
